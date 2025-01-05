@@ -82,9 +82,7 @@ while inPlay:
         bulletX.append(CENTER_X)
         bulletY.append(CENTER_Y)
         mouseX, mouseY = pygame.mouse.get_pos()
-        # Calculate angle using atan2
         angle = math.atan2(mouseY - CENTER_Y, mouseX - CENTER_X)
-        # Store velocity components (cos for X, sin for Y)
         bulletDirection.append((math.cos(angle), math.sin(angle)))
 
     # Update bullets

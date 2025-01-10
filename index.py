@@ -1,3 +1,10 @@
+#########################################
+# File Name: index.py
+# Description: Rogue-Like Game where players use a shooting mechanism to fight off hordes of zombies.
+# Author: Ari Khan
+# Date: 01/09/2025
+#########################################
+
 import pygame
 import math
 
@@ -69,6 +76,7 @@ while inPlay:
 
     # Handle key presses
     keys = pygame.key.get_pressed()
+    mouse = pygame.mouse.get_pressed()
 
     if keys[pygame.K_a] and fieldX < CENTER_X - PLAYER_RADIUS:
         fieldX += speed
@@ -78,7 +86,7 @@ while inPlay:
         fieldY += speed
     if keys[pygame.K_s] and fieldY > CENTER_Y - FIELD_SIZE + PLAYER_RADIUS:
         fieldY -= speed
-    if keys[pygame.K_SPACE]:
+    if mouse[0]:
         bulletX.append(CENTER_X)
         bulletY.append(CENTER_Y)
         mouseX, mouseY = pygame.mouse.get_pos()

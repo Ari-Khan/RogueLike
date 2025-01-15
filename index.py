@@ -61,6 +61,8 @@ zombieHealth = []
 # Game variables
 score = 0
 highScore = 0
+health = 3
+last_hit_time = 0
 font = pygame.font.SysFont("OCR-A Extended", FONT_SIZE)
 
 # Spawn zombies in the corners of the map
@@ -97,7 +99,7 @@ def shift_right(amount, fieldX, bulletX, zombieX):
     return fieldX, bulletX, zombieX
 
 # Game drawing function
-def draw_game(gameWindow, fieldX, fieldY, score, highScore):
+def draw_game(gameWindow, fieldX, fieldY, score, highScore, health):
     # Clear the screen with a dark green background
     gameWindow.fill(DARK_GREEN)
 
@@ -115,11 +117,13 @@ def draw_game(gameWindow, fieldX, fieldY, score, highScore):
     # Draw the player as a circle centered on the screen
     pygame.draw.circle(gameWindow, BLUE, (CENTER_X, CENTER_Y), PLAYER_RADIUS)
 
-    # Draw score and high score
+    # Draw score, high score, and health
     scoreText = font.render(f"Score: {score}", True, WHITE)
     highScoreText = font.render(f"High Score: {highScore}", True, BLUE)
+    healthText = font.render(f"Health: {health}", True, RED)
     gameWindow.blit(scoreText, (20, 20))
     gameWindow.blit(highScoreText, (SCREEN_WIDTH - 200, 20))
+    gameWindow.blit(healthText, (20, 50))
 
     pygame.display.update()
 
@@ -152,6 +156,7 @@ while inPlay:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_SPACE]:
                 score = 0
+                health = 3
                 showHome = False
         continue
 
@@ -184,11 +189,10 @@ while inPlay:
 
     # Update bullets
     for i in range(len(bulletX)):
-        bulletX[i] += bulletDirection[i][0] * BULLET_SPEED  # X component
-        bulletY[i] += bulletDirection[i][1] * BULLET_SPEED  # Y component
+        bulletX[i] += bulletDirection[i][0] * BULLET_SPEED
+        bulletY[i] += bulletDirection[i][1] * BULLET_SPEED
 
     for i in range(len(zombieX) - 1, -1, -1):
-        # Move zombies towards the player
         dx = CENTER_X - zombieX[i]
         dy = CENTER_Y - zombieY[i]
         distance = math.sqrt(dx**2 + dy**2)
@@ -196,12 +200,10 @@ while inPlay:
             zombieX[i] += ZOMBIE_SPEED * dx / distance
             zombieY[i] += ZOMBIE_SPEED * dy / distance
 
-        # Check for bullet collisions
         for e in range(len(bulletX) - 1, -1, -1):
             bullet_dx = bulletX[e] - zombieX[i]
             bullet_dy = bulletY[e] - zombieY[i]
             bullet_distance = math.sqrt(bullet_dx**2 + bullet_dy**2)
-
             if bullet_distance < BULLET_RADIUS + ZOMBIE_RADIUS:
                 zombieHealth[i] -= 1
                 del bulletX[e]
@@ -216,16 +218,20 @@ while inPlay:
                     if score > highScore:
                         highScore = score
 
-    # Spawn zombies every 2 seconds
+        if distance < PLAYER_RADIUS + ZOMBIE_RADIUS:
+            current_time = pygame.time.get_ticks()
+            if current_time - last_hit_time > 1000:
+                health -= 1
+                last_hit_time = current_time
+                if health <= 0:
+                    showHome = True
+
     spawn_timer += 1
-    if spawn_timer >= FPS*2:
+    if spawn_timer >= FPS * 2:
         spawn_zombie(fieldX, fieldY)
         spawn_timer = 0
 
-    # Call the draw function
-    draw_game(gameWindow, fieldX, fieldY, score, highScore)
-
-    # Cap the frame rate to 60 FPS
+    draw_game(gameWindow, fieldX, fieldY, score, highScore, health)
     clock.tick(FPS)
 
 pygame.quit()

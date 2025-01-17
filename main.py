@@ -53,25 +53,58 @@ pygame.mixer.music.set_volume(0.7)
 chompSound = pygame.mixer.Sound("gunshot.wav")
 chompSound.set_volume(1)
 
+# Initialize font
+font = pygame.font.SysFont("OCR-A Extended", FONT_SIZE)
+
 # Initialize game window
 gameWindow = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-# Clock for frame rate
+# Initialize clock
 clock = pygame.time.Clock()
 
-# Game variables
+# Bullet variables and lists
 bulletX = []
 bulletY = []
 bulletDirection = []
+angle = None
+
+# Mouse variables
+mouseX = None
+mouseY = None
+
+# Field variables
+fieldX = CENTER_X - FIELD_SIZE // 2
+fieldY = CENTER_Y - FIELD_SIZE // 2
+corners = []
+
+# Zombie variables and lists
 zombieX = []
 zombieY = []
 zombieHealth = []
+x = None
+y = None
+
+# Collision variables
+dx = None
+dy = None
+distance = None
+bullet_distance = None
+
+# Gameplay variables
 score = 0
 highScore = 0
 health = 3
+
+# Time variables
+current_time = 0
 last_hit_time = 0
 spawn_interval = FPS * 2
-font = pygame.font.SysFont("OCR-A Extended", FONT_SIZE)
+spawn_timer = 0
+bullet_timer = 0
+
+# Game state variables
+inPlay = False
+showHome = False
 
 # Spawn a zombie in a random corner
 def spawn_zombie(fieldX, fieldY):
@@ -178,11 +211,6 @@ def game_over_screen(score, highScore):
             return True
 
 # Main game loop
-spawn_timer = 0
-bullet_timer = 0
-fieldX = CENTER_X - FIELD_SIZE // 2
-fieldY = CENTER_Y - FIELD_SIZE // 2
-
 pygame.mixer.music.play(loops=-1)
 inPlay = True
 showHome = True
@@ -216,6 +244,7 @@ while inPlay:
         if event.type == pygame.QUIT:
             inPlay = False
 
+    # Initialize key and mouse listeners
     keys = pygame.key.get_pressed()
     mouse = pygame.mouse.get_pressed()
 

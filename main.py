@@ -1,5 +1,5 @@
 #########################################
-# File Name: index.py
+# File Name: main.py
 # Description: Rogue-Like Game where players use a shooting mechanism to fight off hordes of zombies.
 # Author: Ari Khan
 # Date: 01/09/2025
@@ -11,6 +11,10 @@ import random
 
 # Initialize Pygame
 pygame.init()
+
+#---------------------------------------#
+# Define Constants                      #
+#---------------------------------------#
 
 # Screen dimensions
 SCREEN_WIDTH = 800
@@ -31,12 +35,17 @@ BLACK = (0, 0, 0)
 
 # Constants
 PLAYER_RADIUS = 30
+PLAYER_SPEED = 5
 BULLET_RADIUS = 5
 BULLET_SPEED = 10
 ZOMBIE_RADIUS = 25
 ZOMBIE_SPEED = 2
 FONT_SIZE = 25
 FPS = 60
+
+#---------------------------------------#
+# Initialize Objects/Variables          #
+#---------------------------------------#
 
 # Initialize music and sound effects
 pygame.mixer.music.load("music.mp3")
@@ -51,7 +60,6 @@ gameWindow = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 # Game variables
-speed = 5
 bulletX = []
 bulletY = []
 bulletDirection = []
@@ -213,13 +221,13 @@ while inPlay:
 
     # Check for key presses for movements
     if keys[pygame.K_a] and fieldX < CENTER_X - PLAYER_RADIUS:
-        fieldX, bulletX, zombieX = shift_left(speed, fieldX, bulletX, zombieX)
+        fieldX, bulletX, zombieX = shift_left(PLAYER_SPEED, fieldX, bulletX, zombieX)
     if keys[pygame.K_d] and fieldX > CENTER_X - FIELD_SIZE + PLAYER_RADIUS:
-        fieldX, bulletX, zombieX = shift_right(speed, fieldX, bulletX, zombieX)
+        fieldX, bulletX, zombieX = shift_right(PLAYER_SPEED, fieldX, bulletX, zombieX)
     if keys[pygame.K_w] and fieldY < CENTER_Y - PLAYER_RADIUS:
-        fieldY, bulletY, zombieY = shift_up(speed, fieldY, bulletY, zombieY)
+        fieldY, bulletY, zombieY = shift_up(PLAYER_SPEED, fieldY, bulletY, zombieY)
     if keys[pygame.K_s] and fieldY > CENTER_Y - FIELD_SIZE + PLAYER_RADIUS:
-        fieldY, bulletY, zombieY = shift_down(speed, fieldY, bulletY, zombieY)
+        fieldY, bulletY, zombieY = shift_down(PLAYER_SPEED, fieldY, bulletY, zombieY)
 
     # Add time to reload clock 
     bullet_timer += clock.get_time()

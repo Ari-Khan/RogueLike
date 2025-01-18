@@ -30,6 +30,7 @@ WHITE = (255, 255, 255)
 LIGHT_GREEN = (60, 255, 80)
 DARK_GREEN = (0, 100, 0)
 BLUE = (50, 100, 250)
+DARK_BLUE = (40, 75, 225)
 RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 
@@ -38,6 +39,8 @@ PLAYER_RADIUS = 30
 PLAYER_SPEED = 5
 BULLET_RADIUS = 5
 BULLET_SPEED = 10
+GUN_WIDTH = 20
+GUN_HEIGHT = 45
 ZOMBIE_RADIUS = 25
 ZOMBIE_SPEED = 2
 FONT_SIZE = 25
@@ -68,6 +71,9 @@ bulletY = []
 bulletDirection = []
 angle = None
 
+# Gun variables and list
+gunAngle = None
+
 # Mouse variables
 mouseX = None
 mouseY = None
@@ -81,6 +87,7 @@ corners = []
 zombieX = []
 zombieY = []
 zombieHealth = []
+immunity_time = 1000
 x = None
 y = None
 
@@ -100,7 +107,9 @@ current_time = 0
 last_hit_time = 0
 spawn_interval = FPS * 2
 spawn_timer = 0
+spawn_timer_decrease = 0.02
 bullet_timer = 0
+reload_rate = 250
 
 # Game state variables
 inPlay = False
@@ -145,7 +154,7 @@ def shift_right(amount, fieldX, bulletX, zombieX):
     return fieldX, bulletX, zombieX
 
 # Draw game objects
-def draw_game(gameWindow, fieldX, fieldY, score, highScore, health):
+def draw_game(gameWindow, fieldX, fieldY, score, highScore, health, gunX, gunY):
     gameWindow.fill(DARK_GREEN)
     pygame.draw.rect(gameWindow, LIGHT_GREEN, (fieldX, fieldY, FIELD_SIZE, FIELD_SIZE))
 
@@ -154,6 +163,7 @@ def draw_game(gameWindow, fieldX, fieldY, score, highScore, health):
     for i in range(len(zombieX)):
         pygame.draw.circle(gameWindow, RED, (int(zombieX[i]), int(zombieY[i])), ZOMBIE_RADIUS)
 
+    pygame.draw.line(gameWindow, DARK_BLUE, (CENTER_X, CENTER_Y), (gunX, gunY), GUN_WIDTH)
     pygame.draw.circle(gameWindow, BLUE, (CENTER_X, CENTER_Y), PLAYER_RADIUS)
 
     scoreText = font.render(f"Score: {score}", True, WHITE)
@@ -171,15 +181,17 @@ def home_screen():
 
     titleText = font.render("Nuclear Survival", True, BLUE)
     playText = font.render("Press SPACE to Start", True, BLUE)
+    hardModeText = font.render("Press SHIFT for easy mode", True, BLUE)
     highScoreText = font.render(f"High Score: {highScore}", True, BLUE)
     controlsText = font.render("Click to shoot and use WASD to move.", True, BLUE)
-    goalText = font.render("Defeat red zombies to survive as long as possible.", True, BLUE)
+    goalText = font.render("Try to defeat as many zombies as possible.", True, BLUE)
 
     gameWindow.blit(titleText, (CENTER_X - 120, CENTER_Y - 150))
     gameWindow.blit(playText, (CENTER_X - 150, CENTER_Y - 100))
-    gameWindow.blit(highScoreText, (CENTER_X - 110, CENTER_Y - 50))
-    gameWindow.blit(controlsText, (CENTER_X - 275, CENTER_Y))
-    gameWindow.blit(goalText, (CENTER_X - 375, CENTER_Y + 50))
+    gameWindow.blit(hardModeText, (CENTER_X - 190, CENTER_Y - 50))
+    gameWindow.blit(highScoreText, (CENTER_X - 110, CENTER_Y))
+    gameWindow.blit(controlsText, (CENTER_X - 275, CENTER_Y + 50))
+    gameWindow.blit(goalText, (CENTER_X - 315, CENTER_Y + 100))
 
     pygame.display.update()
 
@@ -228,6 +240,21 @@ while inPlay:
             if keys[pygame.K_SPACE]:
                 score = 0
                 health = 3
+                reload_rate = 200
+                spawn_interval = FPS * 2
+                bulletX.clear()
+                bulletY.clear()
+                bulletDirection.clear()
+                zombieX.clear()
+                zombieY.clear()
+                zombieHealth.clear()
+                fieldX = CENTER_X - FIELD_SIZE // 2
+                fieldY = CENTER_Y - FIELD_SIZE // 2
+                showHome = False
+            if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+                score = 0
+                health = 3
+                reload_rate = 100
                 spawn_interval = FPS * 2
                 bulletX.clear()
                 bulletY.clear()
@@ -258,20 +285,27 @@ while inPlay:
     if keys[pygame.K_s] and fieldY > CENTER_Y - FIELD_SIZE + PLAYER_RADIUS:
         fieldY, bulletY, zombieY = shift_down(PLAYER_SPEED, fieldY, bulletY, zombieY)
 
+    # Get mouse position
+    mouseX, mouseY = pygame.mouse.get_pos()
+
+    # Move gun into separate quadrants based on mouse position
+    gunAngle = math.atan2(mouseY - CENTER_Y, mouseX - CENTER_X)
+    gunX = CENTER_X + math.cos(gunAngle) * GUN_HEIGHT
+    gunY = CENTER_Y + math.sin(gunAngle) * GUN_HEIGHT
+
     # Add time to reload clock 
     bullet_timer += clock.get_time()
 
     # Check for mouse clicks for shots within reload time
-    if mouse[0] and bullet_timer >= 200:
+    if mouse[0] and bullet_timer >= reload_rate:
         chompSound.play()
-        bulletX.append(CENTER_X)
-        bulletY.append(CENTER_Y)
-        mouseX, mouseY = pygame.mouse.get_pos()
+        bulletX.append(gunX)
+        bulletY.append(gunY)
         angle = math.atan2(mouseY - CENTER_Y, mouseX - CENTER_X)
         bulletDirection.append((math.cos(angle), math.sin(angle)))
         bullet_timer = 0
 
-    # Move bullets based on direction movement
+    # Move bullets based on direction
     for i in range(len(bulletX)):
         bulletX[i] += bulletDirection[i][0] * BULLET_SPEED
         bulletY[i] += bulletDirection[i][1] * BULLET_SPEED
@@ -311,7 +345,7 @@ while inPlay:
         if i < len(zombieX):
             if distance < PLAYER_RADIUS + ZOMBIE_RADIUS:
                 current_time = pygame.time.get_ticks()
-                if current_time - last_hit_time > 1000:
+                if current_time - last_hit_time > immunity_time:
                     health -= 1
                     last_hit_time = current_time
 
@@ -337,13 +371,13 @@ while inPlay:
 
     # Generate zombies with shortening interevals every round
     if spawn_interval > 0:
-        spawn_interval -= 0.01
+        spawn_interval -= spawn_timer_decrease
     if spawn_timer >= spawn_interval:
         spawn_zombie(fieldX, fieldY)
         spawn_timer = 0
 
     # Draw the game
-    draw_game(gameWindow, fieldX, fieldY, score, highScore, health)
+    draw_game(gameWindow, fieldX, fieldY, score, highScore, health, gunX, gunY)
 
     # Set FPS
     clock.tick(FPS)
